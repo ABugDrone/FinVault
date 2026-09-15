@@ -1,0 +1,6 @@
+{
+  "name": "FinVault",
+  "description": "Premium offline expense and earnings tracker with auto-categorization, interactive visual charts, calendar synchronization, and encrypted local storage.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
