@@ -53,6 +53,7 @@ import com.example.ui.MainViewModel
 import com.example.ui.components.AddTransactionSheet
 import com.example.ui.components.BudgetManageDialog
 import com.example.ui.components.ExportDataDialog
+import com.example.ui.components.LedgerSwitcherSheet
 import com.example.ui.components.RecurringManageDialog
 import com.example.ui.screens.AnalyticsScreen
 import com.example.ui.screens.CalendarScreen
@@ -132,6 +133,15 @@ fun FinVaultApp(viewModel: MainViewModel = viewModel()) {
         }
     }
 
+    var isSplashVisible by remember { mutableStateOf(true) }
+    var isReconfiguringJurisdiction by remember { mutableStateOf(false) }
+    var activeNavTab by remember { mutableIntStateOf(0) }
+    var isAddSheetOpen by remember { mutableStateOf(false) }
+    var showExportDialog by remember { mutableStateOf(false) }
+    var showBudgetDialog by remember { mutableStateOf(false) }
+    var showRecurringDialog by remember { mutableStateOf(false) }
+    var showLedgerSwitcherSheet by remember { mutableStateOf(false) }
+
     // Handle deep navigation from system notification PendingIntent
     LaunchedEffect(Unit) {
         val activity = context as? ComponentActivity
@@ -162,15 +172,9 @@ fun FinVaultApp(viewModel: MainViewModel = viewModel()) {
     val budgetProgressList by viewModel.budgetProgressList.collectAsStateWithLifecycle()
     val isSetupCompleted by viewModel.isSetupCompleted.collectAsStateWithLifecycle()
     val currentJurisdiction by viewModel.currentJurisdictionProfile.collectAsStateWithLifecycle()
-
-    var isSplashVisible by remember { mutableStateOf(true) }
-    var isReconfiguringJurisdiction by remember { mutableStateOf(false) }
-
-    var activeNavTab by remember { mutableIntStateOf(0) }
-    var isAddSheetOpen by remember { mutableStateOf(false) }
-    var showExportDialog by remember { mutableStateOf(false) }
-    var showBudgetDialog by remember { mutableStateOf(false) }
-    var showRecurringDialog by remember { mutableStateOf(false) }
+    val allLedgers by viewModel.allLedgers.collectAsStateWithLifecycle()
+    val activeLedger by viewModel.activeLedger.collectAsStateWithLifecycle()
+    val businessSummary by viewModel.businessSummary.collectAsStateWithLifecycle()
 
     LaunchedEffect(syncMessage) {
         syncMessage?.let { msg ->
@@ -193,8 +197,8 @@ fun FinVaultApp(viewModel: MainViewModel = viewModel()) {
         PreSetupScreen(
             initialCountryCode = currentJurisdiction.code,
             isReconfiguring = isReconfiguringJurisdiction,
-            onCompleteSetup = { profile ->
-                viewModel.saveLegalJurisdiction(profile)
+            onCompleteSetup = { profile, role ->
+                viewModel.saveLegalJurisdiction(profile, role)
                 isReconfiguringJurisdiction = false
             },
             onCancelReconfiguration = if (isReconfiguringJurisdiction) {
@@ -291,6 +295,10 @@ fun FinVaultApp(viewModel: MainViewModel = viewModel()) {
                         onCategoryFilterChange = { viewModel.setCategoryFilter(it) },
                         onDeleteTransaction = { viewModel.deleteTransaction(it) },
                         onAddClick = { isAddSheetOpen = true },
+                        activeLedger = activeLedger,
+                        businessSummary = businessSummary,
+                        onOpenLedgerSwitcher = { showLedgerSwitcherSheet = true },
+                        currencySymbol = currentJurisdiction.currencySymbol,
                         onOpenBudgets = { showBudgetDialog = true },
                         onOpenRecurring = { showRecurringDialog = true },
                         onOpenExport = { showExportDialog = true }
@@ -370,7 +378,11 @@ fun FinVaultApp(viewModel: MainViewModel = viewModel()) {
                         },
                         onRecheckBudgets = {
                             viewModel.checkAllBudgetAlerts()
-                        }
+                        },
+                        allLedgers = allLedgers,
+                        activeLedger = activeLedger,
+                        onOpenLedgerSwitcher = { showLedgerSwitcherSheet = true },
+                        onSwitchLedger = { viewModel.switchActiveLedger(it) }
                     )
                 }
             }
@@ -396,7 +408,9 @@ fun FinVaultApp(viewModel: MainViewModel = viewModel()) {
                             )
                         )
                     },
-                    currencySymbol = currentJurisdiction.currencySymbol
+                    currencySymbol = currentJurisdiction.currencySymbol,
+                    activeLedger = activeLedger,
+                    availableLedgers = allLedgers
                 )
             }
 
@@ -454,6 +468,26 @@ fun FinVaultApp(viewModel: MainViewModel = viewModel()) {
                     onProcessNow = {
                         viewModel.processDueRecurringTransactionsNow()
                     }
+                )
+            }
+
+            // Record Keeping Books / Ledgers Management Sheet
+            if (showLedgerSwitcherSheet) {
+                LedgerSwitcherSheet(
+                    ledgers = allLedgers,
+                    activeLedger = activeLedger,
+                    onSelectLedger = { ledgerId ->
+                        viewModel.switchActiveLedger(ledgerId)
+                        showLedgerSwitcherSheet = false
+                    },
+                    onCreateLedger = { name, type, subtype, color, icon ->
+                        viewModel.createNewLedger(name, type, subtype, color, icon, "")
+                        showLedgerSwitcherSheet = false
+                    },
+                    onDeleteLedger = { ledger ->
+                        viewModel.deleteLedger(ledger)
+                    },
+                    onDismiss = { showLedgerSwitcherSheet = false }
                 )
             }
         }

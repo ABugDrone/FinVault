@@ -24,13 +24,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Gavel
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Checkbox
@@ -72,16 +75,21 @@ import com.example.ui.theme.VaultDarkBg
 
 @Composable
 fun PreSetupScreen(
-    initialCountryCode: String = "US",
+    initialCountryCode: String = GlobalJurisdictions.detectDefaultCountry().code,
     isReconfiguring: Boolean = false,
-    onCompleteSetup: (CountryLegalProfile) -> Unit,
+    onCompleteSetup: (CountryLegalProfile, String) -> Unit,
     onCancelReconfiguration: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
+    var selectedRole by remember { mutableStateOf("INDIVIDUAL") }
     var searchQuery by remember { mutableStateOf("") }
     var selectedRegion by remember { mutableStateOf("All") }
+    val detectedDefault = remember { GlobalJurisdictions.detectDefaultCountry() }
     var selectedCountry by remember {
-        mutableStateOf(GlobalJurisdictions.findByCode(initialCountryCode))
+        mutableStateOf(
+            if (initialCountryCode.isNotBlank()) GlobalJurisdictions.findByCode(initialCountryCode)
+            else detectedDefault
+        )
     }
     var hasAcceptedLegalAccord by remember { mutableStateOf(false) }
 
@@ -89,7 +97,7 @@ fun PreSetupScreen(
 
     val filteredCountries by remember {
         derivedStateOf {
-            GlobalJurisdictions.allCountries.filter { country ->
+            GlobalJurisdictions.allWorldCountries.filter { country ->
                 val matchesRegion = selectedRegion == "All" || country.region.equals(selectedRegion, ignoreCase = true)
                 val matchesQuery = searchQuery.isBlank() ||
                         country.name.contains(searchQuery, ignoreCase = true) ||
@@ -174,7 +182,7 @@ fun PreSetupScreen(
                         Button(
                             onClick = {
                                 if (hasAcceptedLegalAccord) {
-                                    onCompleteSetup(selectedCountry)
+                                    onCompleteSetup(selectedCountry, selectedRole)
                                 }
                             },
                             enabled = hasAcceptedLegalAccord,
@@ -261,6 +269,171 @@ fun PreSetupScreen(
                             fontSize = 12.sp,
                             color = Color.LightGray.copy(alpha = 0.8f)
                         )
+                    }
+                }
+            }
+
+            // Account Profile Type Selection: Individual or Business Owner
+            item {
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        text = "ACCOUNT PROFILE TYPE",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.5.sp,
+                        color = CyanAccent
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Choose how you plan to use this ledger vault (you can add both later):",
+                        fontSize = 12.sp,
+                        color = Color.LightGray.copy(alpha = 0.8f)
+                    )
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        // Individual Card
+                        val isIndividual = selectedRole == "INDIVIDUAL"
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isIndividual) CyanAccent.copy(alpha = 0.12f) else Color(0xFF101826),
+                            border = BorderStroke(
+                                if (isIndividual) 1.5.dp else 1.dp,
+                                if (isIndividual) CyanAccent else Color(0xFF1E293B)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { selectedRole = "INDIVIDUAL" }
+                                .testTag("card_role_individual")
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(CyanAccent.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.Person, contentDescription = null, tint = CyanAccent, modifier = Modifier.size(18.dp))
+                                    }
+                                    if (isIndividual) {
+                                        Icon(Icons.Default.Check, contentDescription = null, tint = CyanAccent, modifier = Modifier.size(16.dp))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text("Individual", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "For myself, spouse, and kids. Track personal expenses, salaries, allowances & savings.",
+                                    fontSize = 11.sp,
+                                    color = Color.LightGray.copy(alpha = 0.8f),
+                                    lineHeight = 15.sp
+                                )
+                            }
+                        }
+
+                        // Business Owner Card
+                        val isBusiness = selectedRole == "BUSINESS"
+                        Surface(
+                            shape = RoundedCornerShape(14.dp),
+                            color = if (isBusiness) GoldAccent.copy(alpha = 0.12f) else Color(0xFF101826),
+                            border = BorderStroke(
+                                if (isBusiness) 1.5.dp else 1.dp,
+                                if (isBusiness) GoldAccent else Color(0xFF1E293B)
+                            ),
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { selectedRole = "BUSINESS" }
+                                .testTag("card_role_business")
+                        ) {
+                            Column(modifier = Modifier.padding(14.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(34.dp)
+                                            .clip(RoundedCornerShape(10.dp))
+                                            .background(GoldAccent.copy(alpha = 0.2f)),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(Icons.Default.Store, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(18.dp))
+                                    }
+                                    if (isBusiness) {
+                                        Icon(Icons.Default.Check, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(16.dp))
+                                    }
+                                }
+                                Spacer(modifier = Modifier.height(10.dp))
+                                Text("Business Owner", fontSize = 15.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    "Micro & small business bookkeeping. Stock purchases as expense, sales as income, customer debts & drawings.",
+                                    fontSize = 11.sp,
+                                    color = Color.LightGray.copy(alpha = 0.8f),
+                                    lineHeight = 15.sp
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Auto-Detection Banner
+            item {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = EmeraldIncome.copy(alpha = 0.1f),
+                    border = BorderStroke(1.dp, EmeraldIncome.copy(alpha = 0.35f)),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = detectedDefault.flagEmoji,
+                            fontSize = 26.sp
+                        )
+                        Spacer(modifier = Modifier.width(10.dp))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    text = "Auto-Detected Home Currency",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = EmeraldIncome
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = EmeraldIncome.copy(alpha = 0.2f)
+                                ) {
+                                    Text(
+                                        text = "NATIVE LOCALE",
+                                        fontSize = 8.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = EmeraldIncome,
+                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                    )
+                                }
+                            }
+                            Text(
+                                text = "${detectedDefault.name} (${detectedDefault.currencyCode} ${detectedDefault.currencySymbol}) pre-selected by default instead of US dollars ($). All 195+ world currencies are also selectable below.",
+                                fontSize = 10.sp,
+                                color = Color.LightGray.copy(alpha = 0.85f),
+                                lineHeight = 14.sp
+                            )
+                        }
                     }
                 }
             }

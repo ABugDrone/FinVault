@@ -14,6 +14,12 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     fun getAllTransactions(): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM transactions WHERE ledgerId = :ledgerId ORDER BY timestamp DESC")
+    fun getTransactionsByLedger(ledgerId: String): Flow<List<TransactionEntity>>
+
+    @Query("SELECT * FROM transactions WHERE ledgerId = :ledgerId AND timestamp >= :startTime AND timestamp <= :endTime ORDER BY timestamp DESC")
+    fun getTransactionsByLedgerBetween(ledgerId: String, startTime: Long, endTime: Long): Flow<List<TransactionEntity>>
+
     @Query("SELECT * FROM transactions WHERE timestamp >= :startTime AND timestamp <= :endTime ORDER BY timestamp DESC")
     fun getTransactionsBetween(startTime: Long, endTime: Long): Flow<List<TransactionEntity>>
 

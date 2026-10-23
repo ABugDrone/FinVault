@@ -22,7 +22,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -36,6 +38,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -75,7 +78,7 @@ fun BudgetManageDialog(
     var showAddSection by remember { mutableStateOf(false) }
     var selectedCategory by remember { mutableStateOf("Food & Dining") }
     var limitInput by remember { mutableStateOf("") }
-    var selectedThreshold by remember { mutableDoubleStateOf(85.0) }
+    var selectedThreshold by remember { mutableStateOf(85.0) }
 
     val predefinedCategories = listOf(
         "Food & Dining", "Groceries", "Transport", "Shopping",

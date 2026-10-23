@@ -58,6 +58,16 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.FamilyRestroom
+import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Sell
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import com.example.data.model.LedgerBookEntity
+import com.example.data.model.LedgerType
 import com.example.data.model.RecurrenceFrequency
 import com.example.data.model.RecurringTransactionEntity
 import com.example.data.model.TransactionEntity
@@ -78,6 +88,26 @@ val PredefinedIncomeCategories = listOf(
     "Salary", "Freelance", "Investments", "Bonus", "Consulting", "Dividends", "Other Income"
 )
 
+val PredefinedBusinessExpenseCategories = listOf(
+    "Stock / Inventory Purchases",
+    "Transportation & Delivery",
+    "Electricity & Power",
+    "Personal Withdrawal (Drawings)",
+    "Shop Rent & Stallage",
+    "Staff Wages & Labor",
+    "Packaging & Bags",
+    "Equipment & Repairs",
+    "General Business Expense"
+)
+
+val PredefinedBusinessIncomeCategories = listOf(
+    "Sales of Purchased Stock",
+    "Debt Paid by Customer",
+    "Service & Labor Income",
+    "Contract & Wholesale",
+    "Other Business Income"
+)
+
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun AddTransactionSheet(
@@ -88,15 +118,29 @@ fun AddTransactionSheet(
     hasCalendarPermission: Boolean,
     onRequestCalendarPermission: () -> Unit,
     currencySymbol: String = "$",
+    activeLedger: LedgerBookEntity? = null,
+    availableLedgers: List<LedgerBookEntity> = emptyList(),
     modifier: Modifier = Modifier
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()
 
+    var selectedLedgerId by remember { mutableStateOf(activeLedger?.id ?: "primary_ledger") }
+    val currentSelectedLedger = availableLedgers.find { it.id == selectedLedgerId } ?: activeLedger
+    val isBusinessBook = currentSelectedLedger?.type == LedgerType.BUSINESS
+
     var type by remember { mutableStateOf(TransactionType.EXPENSE) }
     var title by remember { mutableStateOf("") }
     var amountText by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf("General") }
+    var selectedCategory by remember(isBusinessBook, type) {
+        mutableStateOf(
+            if (isBusinessBook) {
+                if (type == TransactionType.EXPENSE) "Stock / Inventory Purchases" else "Sales of Purchased Stock"
+            } else {
+                if (type == TransactionType.EXPENSE) "General" else "Salary"
+            }
+        )
+    }
     val tags = remember { mutableStateListOf<String>() }
     var newTagInput by remember { mutableStateOf("") }
     var note by remember { mutableStateOf("") }
@@ -175,6 +219,69 @@ fun AddTransactionSheet(
 
             Spacer(modifier = Modifier.height(14.dp))
 
+            // Record Book Selector (if multiple books exist)
+            if (availableLedgers.isNotEmpty()) {
+                Text(
+                    text = "Record in Book",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(availableLedgers) { book ->
+                        val isSelected = book.id == selectedLedgerId
+                        val isBookBusiness = book.type == LedgerType.BUSINESS
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = if (isSelected) {
+                                if (isBookBusiness) GoldAccent.copy(alpha = 0.25f) else CyanAccent.copy(alpha = 0.25f)
+                            } else MaterialTheme.colorScheme.surfaceVariant,
+                            border = if (isSelected) androidx.compose.foundation.BorderStroke(
+                                1.5.dp,
+                                if (isBookBusiness) GoldAccent else CyanAccent
+                            ) else null,
+                            modifier = Modifier
+                                .clickable {
+                                    selectedLedgerId = book.id
+                                    // Reset default category if switching book types
+                                    if (book.type == LedgerType.BUSINESS) {
+                                        selectedCategory = if (type == TransactionType.EXPENSE) "Stock / Inventory Purchases" else "Sales of Purchased Stock"
+                                    } else {
+                                        selectedCategory = if (type == TransactionType.EXPENSE) "General" else "Salary"
+                                    }
+                                }
+                                .testTag("book_pill_${book.id}")
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = if (isBookBusiness) Icons.Default.Business else Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = if (isSelected) {
+                                        if (isBookBusiness) GoldAccent else CyanAccent
+                                    } else MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = book.name,
+                                    fontSize = 12.sp,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                    color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
             // Income / Expense Selector Pill
             Row(
                 modifier = Modifier
@@ -191,16 +298,14 @@ fun AddTransactionSheet(
                         .background(if (isExpense) RoseExpense else Color.Transparent)
                         .clickable {
                             type = TransactionType.EXPENSE
-                            if (!PredefinedExpenseCategories.contains(selectedCategory)) {
-                                selectedCategory = "Food & Dining"
-                            }
+                            selectedCategory = if (isBusinessBook) "Stock / Inventory Purchases" else "Food & Dining"
                         }
                         .padding(vertical = 10.dp)
                         .testTag("select_expense_type"),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Expense",
+                        text = if (isBusinessBook) "Expense / Outflow" else "Expense",
                         fontWeight = FontWeight.Bold,
                         color = if (isExpense) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -214,16 +319,14 @@ fun AddTransactionSheet(
                         .background(if (isIncome) EmeraldIncome else Color.Transparent)
                         .clickable {
                             type = TransactionType.INCOME
-                            if (!PredefinedIncomeCategories.contains(selectedCategory)) {
-                                selectedCategory = "Salary"
-                            }
+                            selectedCategory = if (isBusinessBook) "Sales of Purchased Stock" else "Salary"
                         }
                         .padding(vertical = 10.dp)
                         .testTag("select_income_type"),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "Income / Earning",
+                        text = if (isBusinessBook) "Income / Inflow" else "Income / Earning",
                         fontWeight = FontWeight.Bold,
                         color = if (isIncome) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -310,7 +413,11 @@ fun AddTransactionSheet(
             )
             Spacer(modifier = Modifier.height(6.dp))
 
-            val currentCategoryList = if (type == TransactionType.EXPENSE) PredefinedExpenseCategories else PredefinedIncomeCategories
+            val currentCategoryList = if (isBusinessBook) {
+                if (type == TransactionType.EXPENSE) PredefinedBusinessExpenseCategories else PredefinedBusinessIncomeCategories
+            } else {
+                if (type == TransactionType.EXPENSE) PredefinedExpenseCategories else PredefinedIncomeCategories
+            }
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -320,7 +427,9 @@ fun AddTransactionSheet(
                     val isSelected = cat == selectedCategory
                     Surface(
                         shape = RoundedCornerShape(10.dp),
-                        color = if (isSelected) CyanAccent else MaterialTheme.colorScheme.surfaceVariant,
+                        color = if (isSelected) {
+                            if (isBusinessBook) GoldAccent else CyanAccent
+                        } else MaterialTheme.colorScheme.surfaceVariant,
                         modifier = Modifier
                             .clickable { selectedCategory = cat }
                             .testTag("cat_chip_$cat")
@@ -331,6 +440,38 @@ fun AddTransactionSheet(
                             fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                             color = if (isSelected) Color.Black else MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+
+            // Business accounting explanation helper
+            if (isBusinessBook) {
+                val explanation = when (selectedCategory) {
+                    "Stock / Inventory Purchases" -> "📦 Stock is recorded as an operational expense when purchased. When sold, it converts into revenue."
+                    "Sales of Purchased Stock" -> "💰 Sales of stock are recorded as business revenue / gross income."
+                    "Debt Paid by Customer" -> "🤝 Customer debt payment is recorded as business revenue / cash inflow."
+                    "Personal Withdrawal (Drawings)" -> "👤 Owner personal withdrawal (drawings) recorded as expense from business funds."
+                    "Transportation & Delivery" -> "🚚 Transportation and delivery costs are business operating expenses."
+                    "Electricity & Power" -> "⚡ Generator, fuel, or electricity bills are business operating expenses."
+                    "Shop Rent & Stallage" -> "🏬 Facility or stall rent is an operational expense."
+                    else -> null
+                }
+
+                if (explanation != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = GoldAccent.copy(alpha = 0.12f),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.3f)),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            text = explanation,
+                            fontSize = 11.sp,
+                            color = GoldAccent,
+                            lineHeight = 15.sp,
+                            modifier = Modifier.padding(8.dp)
                         )
                     }
                 }
@@ -688,6 +829,17 @@ fun AddTransactionSheet(
                             ""
                         }
 
+                        val classification = when (selectedCategory) {
+                            "Stock / Inventory Purchases" -> "STOCK_PURCHASE"
+                            "Sales of Purchased Stock" -> "STOCK_SALES"
+                            "Debt Paid by Customer" -> "DEBT_COLLECTION"
+                            "Personal Withdrawal (Drawings)" -> "OWNER_DRAWING"
+                            "Transportation & Delivery", "Electricity & Power", "Shop Rent & Stallage",
+                            "Staff Wages & Labor", "Packaging & Bags", "Equipment & Repairs",
+                            "General Business Expense" -> "OPERATING_EXPENSE"
+                            else -> if (isBusinessBook) "OPERATING_EXPENSE" else "GENERAL"
+                        }
+
                         if (isRecurring) {
                             val endMillis = if (hasEndDate) {
                                 val cal = java.util.Calendar.getInstance()
@@ -708,7 +860,8 @@ fun AddTransactionSheet(
                                 endDateMillis = endMillis,
                                 encryptedNote = encryptedNoteString,
                                 syncWithCalendar = syncCalendar,
-                                isActive = true
+                                isActive = true,
+                                ledgerId = selectedLedgerId
                             )
                             onSaveRecurring(recurring, syncCalendar)
                         } else {
@@ -719,7 +872,9 @@ fun AddTransactionSheet(
                                 category = selectedCategory,
                                 tags = tags.toList(),
                                 timestamp = System.currentTimeMillis(),
-                                encryptedNote = encryptedNoteString
+                                encryptedNote = encryptedNoteString,
+                                ledgerId = selectedLedgerId,
+                                businessClassification = classification
                             )
                             onSaveTransaction(newTx, syncCalendar)
                         }

@@ -9,12 +9,15 @@ import com.example.data.calendar.CalendarSyncManager
 import com.example.data.export.DataExportManager
 import com.example.data.local.AppDatabase
 import com.example.data.model.BudgetEntity
+import com.example.data.model.BusinessBookkeepingSummary
 import com.example.data.model.CategoryBudgetProgress
 import com.example.data.model.CategoryRule
 import com.example.data.model.CountryLegalProfile
 import com.example.data.model.ExportDateRange
 import com.example.data.model.ExportFormat
 import com.example.data.model.FinancialSummary
+import com.example.data.model.LedgerBookEntity
+import com.example.data.model.LedgerType
 import com.example.data.model.RecurringTransactionEntity
 import com.example.data.model.TimeframeFilter
 import com.example.data.model.TransactionEntity
@@ -53,6 +56,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             categoryRuleDao = database.categoryRuleDao(),
             recurringTransactionDao = database.recurringTransactionDao(),
             budgetDao = database.budgetDao(),
+            ledgerBookDao = database.ledgerBookDao(),
             calendarSyncManager = calendarSyncManager
         )
 
@@ -88,10 +92,84 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val currentJurisdictionProfile: StateFlow<CountryLegalProfile> = countryPreferencesManager.currentProfile
     val isSetupCompleted: StateFlow<Boolean> = countryPreferencesManager.isSetupCompleted
+    val userRole: StateFlow<String> = countryPreferencesManager.userRole
+    val activeLedgerId: StateFlow<String> = countryPreferencesManager.activeLedgerId
 
-    fun saveLegalJurisdiction(profile: CountryLegalProfile) {
-        countryPreferencesManager.saveLegalJurisdictionSelection(profile)
-        _syncMessage.value = "Legal jurisdiction established: ${profile.name} (${profile.currencyCode} ${profile.currencySymbol})"
+    val allLedgers: StateFlow<List<LedgerBookEntity>> = repository.allLedgers
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val activeLedger: StateFlow<LedgerBookEntity> = combine(
+        allLedgers,
+        activeLedgerId
+    ) { ledgers, currentId ->
+        ledgers.find { it.id == currentId }
+            ?: ledgers.firstOrNull()
+            ?: LedgerBookEntity(
+                id = "primary_ledger",
+                name = "My Personal Vault",
+                type = LedgerType.INDIVIDUAL,
+                currencySymbol = currentJurisdictionProfile.value.currencySymbol
+            )
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5000),
+        LedgerBookEntity(id = "primary_ledger", name = "My Personal Vault", type = LedgerType.INDIVIDUAL)
+    )
+
+    fun switchActiveLedger(ledgerId: String) {
+        countryPreferencesManager.setActiveLedgerId(ledgerId)
+        val selected = allLedgers.value.find { it.id == ledgerId }
+        _syncMessage.value = "Switched to: ${selected?.name ?: "Record Book"}"
+    }
+
+    fun createNewLedger(
+        name: String,
+        type: LedgerType,
+        businessSubtype: String = "",
+        colorHex: Long = 0xFF00E5FF,
+        iconName: String = "person",
+        description: String = ""
+    ) {
+        viewModelScope.launch {
+            val id = "ledger_${System.currentTimeMillis()}"
+            val curr = currentJurisdictionProfile.value
+            val newLedger = LedgerBookEntity(
+                id = id,
+                name = name.trim().ifEmpty { if (type == LedgerType.BUSINESS) "Business Book" else "Personal Book" },
+                type = type,
+                businessSubtype = businessSubtype,
+                currencySymbol = curr.currencySymbol,
+                currencyCode = curr.currencyCode,
+                colorHex = colorHex,
+                iconName = iconName,
+                isDefault = false,
+                description = description
+            )
+            repository.insertLedger(newLedger)
+            countryPreferencesManager.setActiveLedgerId(id)
+            val typeTitle = if (type == LedgerType.BUSINESS) "Business Bookkeeping" else "Individual"
+            _syncMessage.value = "Added $typeTitle Book: $name"
+        }
+    }
+
+    fun deleteLedger(ledger: LedgerBookEntity) {
+        if (ledger.isDefault || ledger.id == "primary_ledger" || ledger.id == "business_store_1") {
+            _syncMessage.value = "Default primary ledger cannot be removed."
+            return
+        }
+        viewModelScope.launch {
+            repository.deleteLedger(ledger)
+            if (activeLedgerId.value == ledger.id) {
+                switchActiveLedger("primary_ledger")
+            }
+            _syncMessage.value = "Removed book: ${ledger.name}"
+        }
+    }
+
+    fun saveLegalJurisdiction(profile: CountryLegalProfile, role: String = "INDIVIDUAL") {
+        countryPreferencesManager.saveLegalJurisdictionSelection(profile, role)
+        val roleDesc = if (role == "BUSINESS") "Business Owner (Stock, Sales & Debt Bookkeeping)" else "Individual Record Keeping"
+        _syncMessage.value = "Setup complete for $roleDesc in ${profile.name} (${profile.currencySymbol} ${profile.currencyCode})"
     }
 
     fun resetJurisdictionSetup() {
@@ -166,13 +244,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val _syncMessage = MutableStateFlow<String?>(null)
     val syncMessage: StateFlow<String?> = _syncMessage.asStateFlow()
 
-    // Filtered transactions based on timeframe, search query, and category filter
+    // Filtered transactions based on timeframe, search query, category filter, and active ledger
     val filteredTransactions: StateFlow<List<TransactionEntity>> = combine(
         allTransactions,
         timeframeFilter,
         searchQuery,
-        categoryFilter
-    ) { transactions, timeframe, query, catFilter ->
+        categoryFilter,
+        activeLedgerId
+    ) { transactions, timeframe, query, catFilter, currentLedgerId ->
         val now = System.currentTimeMillis()
         val cal = Calendar.getInstance()
 
@@ -215,12 +294,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
         transactions.filter { tx ->
+            val matchesLedger = tx.ledgerId == currentLedgerId ||
+                    (currentLedgerId == "primary_ledger" && tx.ledgerId.isBlank())
             val withinTime = tx.timestamp >= startTime
             val matchesQuery = query.isBlank() || tx.title.contains(query, ignoreCase = true) ||
                     tx.category.contains(query, ignoreCase = true) ||
                     tx.tags.any { it.contains(query, ignoreCase = true) }
             val matchesCategory = catFilter == null || tx.category == catFilter
-            withinTime && matchesQuery && matchesCategory
+            matchesLedger && withinTime && matchesQuery && matchesCategory
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
@@ -238,6 +319,51 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             transactionCount = txList.size
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), FinancialSummary())
+
+    // Business Bookkeeping Summary (Stock purchases as expense, sales of stock as income, customer debts collected, personal drawings)
+    val businessSummary: StateFlow<BusinessBookkeepingSummary> = combine(
+        filteredTransactions,
+        activeLedger
+    ) { txList, _ ->
+        val sales = txList.filter {
+            it.type == TransactionType.INCOME &&
+            (it.businessClassification == "STOCK_SALES" || it.category.contains("Sales", ignoreCase = true) || it.category.contains("Stock", ignoreCase = true))
+        }.sumOf { it.amount }
+
+        val stockPurchases = txList.filter {
+            it.type == TransactionType.EXPENSE &&
+            (it.businessClassification == "STOCK_PURCHASE" || it.category.contains("Stock", ignoreCase = true) || it.category.contains("Inventory", ignoreCase = true))
+        }.sumOf { it.amount }
+
+        val debtCollected = txList.filter {
+            it.type == TransactionType.INCOME &&
+            (it.businessClassification == "DEBT_COLLECTION" || it.category.contains("Debt", ignoreCase = true) || it.category.contains("Receivable", ignoreCase = true))
+        }.sumOf { it.amount }
+
+        val personalWithdrawals = txList.filter {
+            it.type == TransactionType.EXPENSE &&
+            (it.businessClassification == "OWNER_DRAWING" || it.category.contains("Drawing", ignoreCase = true) || it.category.contains("Personal Withdrawal", ignoreCase = true))
+        }.sumOf { it.amount }
+
+        val totalIncome = txList.filter { it.type == TransactionType.INCOME }.sumOf { it.amount }
+        val totalExpense = txList.filter { it.type == TransactionType.EXPENSE }.sumOf { it.amount }
+        val operatingExpenses = (totalExpense - stockPurchases - personalWithdrawals).coerceAtLeast(0.0)
+        val stockGrossMargin = sales - stockPurchases
+        val netProfit = totalIncome - totalExpense
+
+        BusinessBookkeepingSummary(
+            totalSalesRevenue = sales,
+            totalStockPurchases = stockPurchases,
+            stockGrossMargin = stockGrossMargin,
+            totalDebtCollected = debtCollected,
+            totalPersonalWithdrawals = personalWithdrawals,
+            totalOperatingExpenses = operatingExpenses,
+            totalIncome = totalIncome,
+            totalExpense = totalExpense,
+            netBusinessProfit = netProfit,
+            transactionCount = txList.size
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), BusinessBookkeepingSummary())
 
     // Bar Chart Data
     val barChartData: StateFlow<List<BarGroup>> = filteredTransactions.combine(timeframeFilter) { txList, timeframe ->
@@ -301,14 +427,19 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun addTransaction(transaction: TransactionEntity, syncCalendar: Boolean) {
         viewModelScope.launch {
-            repository.insertTransaction(transaction, syncCalendar)
+            val txWithLedger = if (transaction.ledgerId.isBlank()) {
+                transaction.copy(ledgerId = activeLedger.value.id)
+            } else {
+                transaction
+            }
+            repository.insertTransaction(txWithLedger, syncCalendar)
             if (syncCalendar && repository.hasCalendarPermission()) {
                 _syncMessage.value = "Synced with device calendar!"
             }
 
             // Check if this expense pushed category near or over budget
-            if (transaction.type == TransactionType.EXPENSE) {
-                checkBudgetAlertForCategory(transaction.category, transaction.amount)
+            if (txWithLedger.type == TransactionType.EXPENSE) {
+                checkBudgetAlertForCategory(txWithLedger.category, txWithLedger.amount)
             }
         }
     }

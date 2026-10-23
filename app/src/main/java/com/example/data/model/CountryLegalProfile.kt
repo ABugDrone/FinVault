@@ -453,10 +453,313 @@ object GlobalJurisdictions {
             currencyName = "Israeli New Shekel",
             jurisdictionName = "State of Israel Financial Jurisdiction",
             regulatoryStandard = "Bank of Israel Directive"
+        ),
+        CountryLegalProfile(
+            code = "ET",
+            name = "Ethiopia",
+            region = "Middle East & Africa",
+            flagEmoji = "🇪🇹",
+            currencyCode = "ETB",
+            currencySymbol = "Br",
+            currencyName = "Ethiopian Birr",
+            jurisdictionName = "Federal Democratic Republic of Ethiopia",
+            regulatoryStandard = "NBE Financial Framework"
+        ),
+        CountryLegalProfile(
+            code = "RW",
+            name = "Rwanda",
+            region = "Middle East & Africa",
+            flagEmoji = "🇷🇼",
+            currencyCode = "RWF",
+            currencySymbol = "FRw",
+            currencyName = "Rwandan Franc",
+            jurisdictionName = "Republic of Rwanda Financial Authority",
+            regulatoryStandard = "BNR Monetary Directive"
+        ),
+        CountryLegalProfile(
+            code = "TZ",
+            name = "Tanzania",
+            region = "Middle East & Africa",
+            flagEmoji = "🇹🇿",
+            currencyCode = "TZS",
+            currencySymbol = "TSh",
+            currencyName = "Tanzanian Shilling",
+            jurisdictionName = "United Republic of Tanzania Jurisdiction",
+            regulatoryStandard = "BOT Financial Accord"
+        ),
+        CountryLegalProfile(
+            code = "UG",
+            name = "Uganda",
+            region = "Middle East & Africa",
+            flagEmoji = "🇺🇬",
+            currencyCode = "UGX",
+            currencySymbol = "USh",
+            currencyName = "Ugandan Shilling",
+            jurisdictionName = "Republic of Uganda Jurisdiction",
+            regulatoryStandard = "BOU Regulatory Standards"
+        ),
+        CountryLegalProfile(
+            code = "PK",
+            name = "Pakistan",
+            region = "Asia-Pacific",
+            flagEmoji = "🇵🇰",
+            currencyCode = "PKR",
+            currencySymbol = "Rs",
+            currencyName = "Pakistani Rupee",
+            jurisdictionName = "Islamic Republic of Pakistan Jurisdiction",
+            regulatoryStandard = "State Bank of Pakistan Framework"
+        ),
+        CountryLegalProfile(
+            code = "BD",
+            name = "Bangladesh",
+            region = "Asia-Pacific",
+            flagEmoji = "🇧🇩",
+            currencyCode = "BDT",
+            currencySymbol = "৳",
+            currencyName = "Bangladeshi Taka",
+            jurisdictionName = "People's Republic of Bangladesh Jurisdiction",
+            regulatoryStandard = "Bangladesh Bank Standard"
+        ),
+        CountryLegalProfile(
+            code = "PH",
+            name = "Philippines",
+            region = "Asia-Pacific",
+            flagEmoji = "🇵🇭",
+            currencyCode = "PHP",
+            currencySymbol = "₱",
+            currencyName = "Philippine Peso",
+            jurisdictionName = "Republic of the Philippines Jurisdiction",
+            regulatoryStandard = "BSP Financial Framework"
+        ),
+        CountryLegalProfile(
+            code = "ID",
+            name = "Indonesia",
+            region = "Asia-Pacific",
+            flagEmoji = "🇮🇩",
+            currencyCode = "IDR",
+            currencySymbol = "Rp",
+            currencyName = "Indonesian Rupiah",
+            jurisdictionName = "Republic of Indonesia Financial Jurisdiction",
+            regulatoryStandard = "Bank Indonesia / OJK Standard"
+        ),
+        CountryLegalProfile(
+            code = "MY",
+            name = "Malaysia",
+            region = "Asia-Pacific",
+            flagEmoji = "🇲🇾",
+            currencyCode = "MYR",
+            currencySymbol = "RM",
+            currencyName = "Malaysian Ringgit",
+            jurisdictionName = "Federation of Malaysia Financial Jurisdiction",
+            regulatoryStandard = "Bank Negara Malaysia Standard"
+        ),
+        CountryLegalProfile(
+            code = "VN",
+            name = "Vietnam",
+            region = "Asia-Pacific",
+            flagEmoji = "🇻🇳",
+            currencyCode = "VND",
+            currencySymbol = "₫",
+            currencyName = "Vietnamese Dong",
+            jurisdictionName = "Socialist Republic of Vietnam Jurisdiction",
+            regulatoryStandard = "State Bank of Vietnam Framework"
+        ),
+        CountryLegalProfile(
+            code = "NZ",
+            name = "New Zealand",
+            region = "Asia-Pacific",
+            flagEmoji = "🇳🇿",
+            currencyCode = "NZD",
+            currencySymbol = "NZ$",
+            currencyName = "New Zealand Dollar",
+            jurisdictionName = "Realm of New Zealand Jurisdiction",
+            regulatoryStandard = "RBNZ Financial Standards"
+        ),
+        CountryLegalProfile(
+            code = "TR",
+            name = "Turkey",
+            region = "Europe",
+            flagEmoji = "🇹🇷",
+            currencyCode = "TRY",
+            currencySymbol = "₺",
+            currencyName = "Turkish Lira",
+            jurisdictionName = "Republic of Turkey Financial Jurisdiction",
+            regulatoryStandard = "CBRT Regulatory Standard"
+        ),
+        CountryLegalProfile(
+            code = "PL",
+            name = "Poland",
+            region = "Europe",
+            flagEmoji = "🇵🇱",
+            currencyCode = "PLN",
+            currencySymbol = "zł",
+            currencyName = "Polish Zloty",
+            jurisdictionName = "Republic of Poland Financial Jurisdiction",
+            regulatoryStandard = "NBP Financial Framework"
+        ),
+        CountryLegalProfile(
+            code = "SE",
+            name = "Sweden",
+            region = "Europe",
+            flagEmoji = "🇸🇪",
+            currencyCode = "SEK",
+            currencySymbol = "kr",
+            currencyName = "Swedish Krona",
+            jurisdictionName = "Kingdom of Sweden Financial Jurisdiction",
+            regulatoryStandard = "Riksbank Regulatory Accord"
+        ),
+        CountryLegalProfile(
+            code = "NO",
+            name = "Norway",
+            region = "Europe",
+            flagEmoji = "🇳🇴",
+            currencyCode = "NOK",
+            currencySymbol = "kr",
+            currencyName = "Norwegian Krone",
+            jurisdictionName = "Kingdom of Norway Financial Jurisdiction",
+            regulatoryStandard = "Norges Bank Monetary Directive"
+        ),
+        CountryLegalProfile(
+            code = "SA",
+            name = "Saudi Arabia",
+            region = "Middle East & Africa",
+            flagEmoji = "🇸🇦",
+            currencyCode = "SAR",
+            currencySymbol = "SAR",
+            currencyName = "Saudi Riyal",
+            jurisdictionName = "Kingdom of Saudi Arabia Jurisdiction",
+            regulatoryStandard = "SAMA Financial Standards"
+        ),
+        CountryLegalProfile(
+            code = "QA",
+            name = "Qatar",
+            region = "Middle East & Africa",
+            flagEmoji = "🇶🇦",
+            currencyCode = "QAR",
+            currencySymbol = "QR",
+            currencyName = "Qatari Riyal",
+            jurisdictionName = "State of Qatar Financial Jurisdiction",
+            regulatoryStandard = "QCB Regulatory Framework"
+        ),
+        CountryLegalProfile(
+            code = "JM",
+            name = "Jamaica",
+            region = "Americas",
+            flagEmoji = "🇯🇲",
+            currencyCode = "JMD",
+            currencySymbol = "J$",
+            currencyName = "Jamaican Dollar",
+            jurisdictionName = "Jamaica Sovereign Jurisdiction",
+            regulatoryStandard = "Bank of Jamaica Framework"
         )
     )
 
+    /**
+     * Converts a 2-letter ISO country code into Unicode flag emoji.
+     * E.g. "NG" -> 🇳🇬, "US" -> 🇺🇸, "GB" -> 🇬🇧
+     */
+    fun getFlagEmoji(countryCode: String): String {
+        if (countryCode.length != 2) return "🌐"
+        val upper = countryCode.uppercase(java.util.Locale.US)
+        val firstChar = upper[0].code - 'A'.code + 0x1F1E6
+        val secondChar = upper[1].code - 'A'.code + 0x1F1E6
+        return String(Character.toChars(firstChar)) + String(Character.toChars(secondChar))
+    }
+
+    /**
+     * Dynamically generates a CountryLegalProfile from system Locale & Currency.
+     * Enables automatic coverage for all 195+ sovereign countries and 240+ ISO territories in the world.
+     */
+    fun createDynamicProfile(countryCode: String): CountryLegalProfile {
+        val upperCode = countryCode.uppercase(java.util.Locale.US)
+        val locale = java.util.Locale("", upperCode)
+        val countryName = locale.displayCountry.takeIf { it.isNotBlank() } ?: upperCode
+        val flag = getFlagEmoji(upperCode)
+
+        var currencyCode = "USD"
+        var currencySymbol = "$"
+        var currencyName = "US Dollar"
+
+        try {
+            val curr = java.util.Currency.getInstance(locale)
+            if (curr != null) {
+                currencyCode = curr.currencyCode
+                currencySymbol = curr.getSymbol(java.util.Locale.getDefault())
+                currencyName = curr.displayName
+            }
+        } catch (_: Exception) {
+            // fallback
+        }
+
+        val region = when (upperCode) {
+            in listOf("NG", "GH", "KE", "ZA", "EG", "ET", "RW", "TZ", "UG", "MA", "DZ", "SN", "CM", "AO", "ZM", "ZW", "AE", "SA", "QA", "KW", "OM", "BH", "IL", "JO") -> "Middle East & Africa"
+            in listOf("US", "CA", "MX", "BR", "AR", "CO", "CL", "PE", "JM", "CR", "PA", "DO") -> "Americas"
+            in listOf("GB", "DE", "FR", "IT", "ES", "NL", "CH", "SE", "NO", "DK", "PL", "TR", "IE", "BE", "AT", "PT", "GR", "CZ", "HU", "RO", "UA") -> "Europe"
+            else -> "Asia-Pacific"
+        }
+
+        return CountryLegalProfile(
+            code = upperCode,
+            name = countryName,
+            region = region,
+            flagEmoji = flag,
+            currencyCode = currencyCode,
+            currencySymbol = currencySymbol,
+            currencyName = currencyName,
+            jurisdictionName = "$countryName Sovereign Jurisdiction",
+            regulatoryStandard = "$countryName Central Bank & Financial Standard"
+        )
+    }
+
+    /**
+     * Automatically detects the user's home country and native currency using the Android device locale.
+     * Never defaults blindly to US dollars ($) if the user is in Nigeria (₦), UK (£), India (₹), Kenya (KSh), etc.!
+     */
+    fun detectDefaultCountry(): CountryLegalProfile {
+        try {
+            val deviceCountry = java.util.Locale.getDefault().country
+            if (!deviceCountry.isNullOrBlank()) {
+                val found = allCountries.find { it.code.equals(deviceCountry, ignoreCase = true) }
+                if (found != null) {
+                    return found
+                }
+                return createDynamicProfile(deviceCountry)
+            }
+        } catch (_: Exception) {
+            // fallback below
+        }
+        return allCountries.first()
+    }
+
+    /**
+     * Returns full world coverage (curated + dynamically resolved ISO countries)
+     * covering all 195+ sovereign nations in the world.
+     */
+    val allWorldCountries: List<CountryLegalProfile> by lazy {
+        val existingCodes = allCountries.map { it.code.uppercase(java.util.Locale.US) }.toSet()
+        val additional = mutableListOf<CountryLegalProfile>()
+
+        val isoCountries = java.util.Locale.getISOCountries()
+        for (code in isoCountries) {
+            if (!existingCodes.contains(code)) {
+                try {
+                    val profile = createDynamicProfile(code)
+                    if (profile.name.isNotBlank() && profile.code.length == 2) {
+                        additional.add(profile)
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+        allCountries + additional.sortedBy { it.name }
+    }
+
     fun findByCode(code: String): CountryLegalProfile {
-        return allCountries.find { it.code.equals(code, ignoreCase = true) } ?: allCountries.first()
+        val found = allCountries.find { it.code.equals(code, ignoreCase = true) }
+        if (found != null) return found
+        return try {
+            createDynamicProfile(code)
+        } catch (_: Exception) {
+            allCountries.first()
+        }
     }
 }

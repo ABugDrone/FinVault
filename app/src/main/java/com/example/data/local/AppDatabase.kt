@@ -8,6 +8,8 @@ import androidx.room.TypeConverters
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.BudgetEntity
 import com.example.data.model.CategoryRule
+import com.example.data.model.LedgerBookEntity
+import com.example.data.model.LedgerType
 import com.example.data.model.RecurrenceFrequency
 import com.example.data.model.RecurringTransactionEntity
 import com.example.data.model.TransactionEntity
@@ -23,9 +25,10 @@ import java.util.Calendar
         TransactionEntity::class,
         CategoryRule::class,
         RecurringTransactionEntity::class,
-        BudgetEntity::class
+        BudgetEntity::class,
+        LedgerBookEntity::class
     ],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -34,6 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun categoryRuleDao(): CategoryRuleDao
     abstract fun recurringTransactionDao(): RecurringTransactionDao
     abstract fun budgetDao(): BudgetDao
+    abstract fun ledgerBookDao(): LedgerBookDao
 
     companion object {
         @Volatile
@@ -68,10 +72,78 @@ abstract class AppDatabase : RoomDatabase() {
         }
 
         private suspend fun populateInitialData(database: AppDatabase) {
+            val ledgerDao = database.ledgerBookDao()
             val ruleDao = database.categoryRuleDao()
             val txDao = database.transactionDao()
 
+            val defaultLedgers = listOf(
+                LedgerBookEntity(
+                    id = "primary_ledger",
+                    name = "My Personal Vault",
+                    type = LedgerType.INDIVIDUAL,
+                    businessSubtype = "Personal Finances",
+                    currencySymbol = "$",
+                    currencyCode = "USD",
+                    colorHex = 0xFF00E5FF,
+                    iconName = "person",
+                    isDefault = true,
+                    description = "Personal income, daily expenses, savings and living costs."
+                ),
+                LedgerBookEntity(
+                    id = "business_store_1",
+                    name = "Retail & Provisions Store",
+                    type = LedgerType.BUSINESS,
+                    businessSubtype = "Micro/Small Retail & Stock Inventory",
+                    currencySymbol = "$",
+                    currencyCode = "USD",
+                    colorHex = 0xFFFFB300,
+                    iconName = "store",
+                    isDefault = false,
+                    description = "Stock purchases, sales of goods, customer debt collection, and owner drawings."
+                ),
+                LedgerBookEntity(
+                    id = "spouse_ledger",
+                    name = "Spouse Shared Ledger",
+                    type = LedgerType.INDIVIDUAL,
+                    businessSubtype = "Household & Personal",
+                    currencySymbol = "$",
+                    currencyCode = "USD",
+                    colorHex = 0xFFFF4081,
+                    iconName = "favorite",
+                    isDefault = false,
+                    description = "Shared family expenses, gifts, medical and travel."
+                ),
+                LedgerBookEntity(
+                    id = "kids_ledger",
+                    name = "Kids' Education & Allowance",
+                    type = LedgerType.INDIVIDUAL,
+                    businessSubtype = "Family & School",
+                    currencySymbol = "$",
+                    currencyCode = "USD",
+                    colorHex = 0xFF7C4DFF,
+                    iconName = "child",
+                    isDefault = false,
+                    description = "Tuition, uniforms, stationery, books, toys and allowances."
+                )
+            )
+            ledgerDao.insertLedgers(defaultLedgers)
+
             val defaultRules = listOf(
+                // Business Bookkeeping Rules
+                CategoryRule(keyword = "stock", targetCategory = "Stock & Inventory Purchases", defaultType = TransactionType.EXPENSE, defaultTags = listOf("Inventory", "Resale")),
+                CategoryRule(keyword = "wholesale", targetCategory = "Stock & Inventory Purchases", defaultType = TransactionType.EXPENSE, defaultTags = listOf("Restock", "Supplier")),
+                CategoryRule(keyword = "inventory", targetCategory = "Stock & Inventory Purchases", defaultType = TransactionType.EXPENSE, defaultTags = listOf("Goods")),
+                CategoryRule(keyword = "sales", targetCategory = "Sales of Purchased Stock", defaultType = TransactionType.INCOME, defaultTags = listOf("Turnover", "Revenue")),
+                CategoryRule(keyword = "sold", targetCategory = "Sales of Purchased Stock", defaultType = TransactionType.INCOME, defaultTags = listOf("Sales")),
+                CategoryRule(keyword = "debt", targetCategory = "Debt Paid by Customers", defaultType = TransactionType.INCOME, defaultTags = listOf("Receivables", "CreditRecovery")),
+                CategoryRule(keyword = "drawing", targetCategory = "Personal Withdrawal (Drawings)", defaultType = TransactionType.EXPENSE, defaultTags = listOf("OwnerDrawings", "Personal")),
+                CategoryRule(keyword = "withdrawal", targetCategory = "Personal Withdrawal (Drawings)", defaultType = TransactionType.EXPENSE, defaultTags = listOf("Drawings")),
+                CategoryRule(keyword = "generator", targetCategory = "Electricity & Power", defaultType = TransactionType.EXPENSE, defaultTags = listOf("ShopPower", "Fuel")),
+                CategoryRule(keyword = "delivery", targetCategory = "Transportation & Delivery", defaultType = TransactionType.EXPENSE, defaultTags = listOf("Logistics", "StockTransport")),
+                CategoryRule(keyword = "stall", targetCategory = "Shop Rent & Stallage", defaultType = TransactionType.EXPENSE, defaultTags = listOf("Premises", "Fixed")),
+                CategoryRule(keyword = "wage", targetCategory = "Staff Wages & Allowances", defaultType = TransactionType.EXPENSE, defaultTags = listOf("Staff", "Payroll")),
+
+                // Individual Rules
                 CategoryRule(keyword = "salary", targetCategory = "Salary", defaultType = TransactionType.INCOME, defaultTags = listOf("Payroll", "Primary")),
                 CategoryRule(keyword = "payroll", targetCategory = "Salary", defaultType = TransactionType.INCOME, defaultTags = listOf("Work")),
                 CategoryRule(keyword = "freelance", targetCategory = "Freelance", defaultType = TransactionType.INCOME, defaultTags = listOf("SideHustle", "Client")),
@@ -193,7 +265,76 @@ abstract class AppDatabase : RoomDatabase() {
                     category = "Technology",
                     tags = listOf("Tech", "Hardware"),
                     timestamp = now - 20 * 86400 * 1000L, // 20 days ago
-                    encryptedNote = CryptoManager.encrypt("Wireless custom Q3 Max mechanical keyboard.")
+                    encryptedNote = CryptoManager.encrypt("Wireless custom Q3 Max mechanical keyboard."),
+                    ledgerId = "primary_ledger"
+                ),
+
+                // Micro & Small Business Bookkeeping Seed Transactions
+                TransactionEntity(
+                    title = "Wholesale Provisions Restock (Flour, Rice, Oil)",
+                    amount = 1450.00,
+                    type = TransactionType.EXPENSE,
+                    category = "Stock & Inventory Purchases",
+                    tags = listOf("Stock", "Wholesale", "Inventory"),
+                    timestamp = now - 5 * 86400 * 1000L,
+                    encryptedNote = CryptoManager.encrypt("Purchased 20 bags of flour, 10 bags of rice, cooking oil."),
+                    ledgerId = "business_store_1",
+                    businessClassification = "STOCK_PURCHASE"
+                ),
+                TransactionEntity(
+                    title = "Wholesale Stock Delivery Waybill",
+                    amount = 65.00,
+                    type = TransactionType.EXPENSE,
+                    category = "Transportation & Delivery",
+                    tags = listOf("Logistics", "Transport"),
+                    timestamp = now - 5 * 86400 * 1000L + 1800000L,
+                    encryptedNote = CryptoManager.encrypt("Van freight from main warehouse market to retail shop."),
+                    ledgerId = "business_store_1",
+                    businessClassification = "OPERATING_EXPENSE"
+                ),
+                TransactionEntity(
+                    title = "Daily Shop Sales & Walk-in Cash",
+                    amount = 2240.00,
+                    type = TransactionType.INCOME,
+                    category = "Sales of Purchased Stock",
+                    tags = listOf("Sales", "Cash", "Turnover"),
+                    timestamp = now - 2 * 86400 * 1000L,
+                    encryptedNote = CryptoManager.encrypt("Full day cash sales and bank transfers for provisions."),
+                    ledgerId = "business_store_1",
+                    businessClassification = "STOCK_SALES"
+                ),
+                TransactionEntity(
+                    title = "Alhaji Bello Settled Outstanding Credit",
+                    amount = 320.00,
+                    type = TransactionType.INCOME,
+                    category = "Debt Paid by Customers",
+                    tags = listOf("Receivables", "DebtSettled"),
+                    timestamp = now - 1 * 86400 * 1000L,
+                    encryptedNote = CryptoManager.encrypt("Customer paid full debt for goods collected on credit last week."),
+                    ledgerId = "business_store_1",
+                    businessClassification = "DEBT_COLLECTION"
+                ),
+                TransactionEntity(
+                    title = "Generator Fuel & Shop Power",
+                    amount = 45.00,
+                    type = TransactionType.EXPENSE,
+                    category = "Electricity & Power",
+                    tags = listOf("Power", "Utilities"),
+                    timestamp = now - 18 * 3600 * 1000L,
+                    encryptedNote = CryptoManager.encrypt("Fuel for cold room freezer and lighting."),
+                    ledgerId = "business_store_1",
+                    businessClassification = "OPERATING_EXPENSE"
+                ),
+                TransactionEntity(
+                    title = "Owner Personal Drawing (Home & Family)",
+                    amount = 250.00,
+                    type = TransactionType.EXPENSE,
+                    category = "Personal Withdrawal (Drawings)",
+                    tags = listOf("Drawings", "Owner"),
+                    timestamp = now - 6 * 3600 * 1000L,
+                    encryptedNote = CryptoManager.encrypt("Personal cash taken by shop owner for family upkeep."),
+                    ledgerId = "business_store_1",
+                    businessClassification = "OWNER_DRAWING"
                 )
             )
 

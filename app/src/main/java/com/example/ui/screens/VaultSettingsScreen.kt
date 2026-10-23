@@ -2,6 +2,8 @@ package com.example.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -62,13 +64,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.Gavel
+import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PieChart
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.ui.graphics.Brush
 import com.example.data.model.CategoryRule
 import com.example.data.model.CountryLegalProfile
+import com.example.data.model.LedgerBookEntity
+import com.example.data.model.LedgerType
 import com.example.data.model.TransactionType
 import com.example.ui.theme.CyanAccent
 import com.example.ui.theme.EmeraldIncome
@@ -98,6 +105,10 @@ fun VaultSettingsScreen(
     onRequestNotificationPermission: () -> Unit = {},
     onSendTestBudgetAlert: (category: String, isExceeded: Boolean) -> Unit = { _, _ -> },
     onRecheckBudgets: () -> Unit = {},
+    allLedgers: List<LedgerBookEntity> = emptyList(),
+    activeLedger: LedgerBookEntity? = null,
+    onOpenLedgerSwitcher: () -> Unit = {},
+    onSwitchLedger: (String) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var showAddRuleDialog by remember { mutableStateOf(false) }
@@ -256,6 +267,189 @@ fun VaultSettingsScreen(
                         Icon(Icons.Default.Gavel, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Change Country & Legal Currency", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
+                    }
+                }
+            }
+        }
+
+        // Record Keeping Books & Ledgers Card
+        item {
+            Surface(
+                shape = RoundedCornerShape(16.dp),
+                color = MaterialTheme.colorScheme.surface,
+                border = androidx.compose.foundation.BorderStroke(1.dp, Brush.horizontalGradient(listOf(GoldAccent, CyanAccent))),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 18.dp, vertical = 6.dp)
+                    .testTag("card_record_books")
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(CyanAccent.copy(alpha = 0.15f)),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Store,
+                                    contentDescription = null,
+                                    tint = CyanAccent,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "Record Keeping Books",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = "Business, Self, Spouse & Kids ledgers",
+                                    fontSize = 11.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = CyanAccent.copy(alpha = 0.15f)
+                        ) {
+                            Text(
+                                text = "${allLedgers.size} BOOKS",
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = CyanAccent,
+                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Maintain fully separated financial records for your business operations and family members. Stock purchases, sales revenue, customer debts, and personal withdrawals are isolated per book.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Active Book banner
+                    if (activeLedger != null) {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = Color(0xFF0D1522),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF1E2D42)),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(12.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val isBiz = activeLedger.type == LedgerType.BUSINESS
+                                Box(
+                                    modifier = Modifier
+                                        .size(36.dp)
+                                        .clip(CircleShape)
+                                        .background(if (isBiz) GoldAccent.copy(alpha = 0.2f) else CyanAccent.copy(alpha = 0.2f)),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = if (isBiz) Icons.Default.Business else Icons.Default.Person,
+                                        contentDescription = null,
+                                        tint = if (isBiz) GoldAccent else CyanAccent,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = activeLedger.name,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = if (isBiz) "Business Bookkeeping Ledger" else "Personal & Family Record",
+                                        fontSize = 11.sp,
+                                        color = if (isBiz) GoldAccent else CyanAccent
+                                    )
+                                }
+                                Surface(
+                                    shape = RoundedCornerShape(6.dp),
+                                    color = EmeraldIncome.copy(alpha = 0.15f)
+                                ) {
+                                    Text(
+                                        text = "ACTIVE",
+                                        fontSize = 10.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = EmeraldIncome,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(10.dp))
+                    }
+
+                    // Quick Switch Pills
+                    if (allLedgers.size > 1) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
+                        ) {
+                            allLedgers.forEach { book ->
+                                val isSelected = book.id == activeLedger?.id
+                                val isBiz = book.type == LedgerType.BUSINESS
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = if (isSelected) {
+                                        if (isBiz) GoldAccent.copy(alpha = 0.25f) else CyanAccent.copy(alpha = 0.25f)
+                                    } else MaterialTheme.colorScheme.surfaceVariant,
+                                    border = if (isSelected) androidx.compose.foundation.BorderStroke(1.dp, if (isBiz) GoldAccent else CyanAccent) else null,
+                                    modifier = Modifier.clickable { onSwitchLedger(book.id) }
+                                ) {
+                                    Text(
+                                        text = book.name,
+                                        fontSize = 11.sp,
+                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                                        color = if (isSelected) Color.White else MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+
+                    Button(
+                        onClick = onOpenLedgerSwitcher,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFF192538),
+                            contentColor = CyanAccent
+                        ),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, CyanAccent.copy(alpha = 0.4f)),
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(42.dp)
+                            .testTag("btn_manage_ledgers")
+                    ) {
+                        Icon(Icons.Default.Store, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Add or Manage Record Books", fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                     }
                 }
             }

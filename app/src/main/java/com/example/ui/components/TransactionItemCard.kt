@@ -126,6 +126,32 @@ fun TransactionItemCard(
                                 color = accentColor,
                                 fontWeight = FontWeight.Medium
                             )
+
+                            if (transaction.businessClassification.isNotBlank()) {
+                                val (badgeText, badgeColor) = when (transaction.businessClassification) {
+                                    "STOCK_PURCHASE" -> "Stock Purchase" to RoseExpense
+                                    "STOCK_SALES" -> "Stock Sold" to EmeraldIncome
+                                    "DEBT_COLLECTION" -> "Debt Collected" to CyanAccent
+                                    "OWNER_DRAWING" -> "Owner Drawing" to Color(0xFFFFB300)
+                                    else -> "" to Color.Transparent
+                                }
+                                if (badgeText.isNotBlank()) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = badgeColor.copy(alpha = 0.15f)
+                                    ) {
+                                        Text(
+                                            text = badgeText,
+                                            fontSize = 9.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = badgeColor,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 1.dp)
+                                        )
+                                    }
+                                }
+                            }
+
                             Text(
                                 text = " • $formattedTime",
                                 fontSize = 11.sp,
@@ -140,11 +166,12 @@ fun TransactionItemCard(
                     horizontalAlignment = Alignment.End,
                     modifier = Modifier.padding(start = 8.dp)
                 ) {
+                    val symbol = CryptoManager.activeCurrencySymbol
                     val amountPrefix = if (isIncome) "+" else "-"
                     val displayAmount = if (isPrivacyMode) {
                         "••••••"
                     } else {
-                        "$amountPrefix${String.format("$%,.2f", transaction.amount)}"
+                        "$amountPrefix$symbol${String.format(Locale.getDefault(), "%,.2f", transaction.amount)}"
                     }
                     Text(
                         text = displayAmount,

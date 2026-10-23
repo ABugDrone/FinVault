@@ -25,12 +25,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.ChildCare
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.MonetizationOn
 import androidx.compose.material.icons.filled.NorthEast
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SouthWest
+import androidx.compose.material.icons.filled.Store
+import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.filled.Wallet
@@ -43,6 +51,9 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.example.data.model.BusinessBookkeepingSummary
+import com.example.data.model.LedgerBookEntity
+import com.example.data.model.LedgerType
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -86,6 +97,10 @@ fun DashboardScreen(
     onCategoryFilterChange: (String?) -> Unit,
     onDeleteTransaction: (TransactionEntity) -> Unit,
     onAddClick: () -> Unit,
+    activeLedger: LedgerBookEntity,
+    businessSummary: BusinessBookkeepingSummary,
+    onOpenLedgerSwitcher: () -> Unit,
+    currencySymbol: String = "$",
     onOpenBudgets: () -> Unit = {},
     onOpenRecurring: () -> Unit = {},
     onOpenExport: () -> Unit = {},
@@ -145,7 +160,7 @@ fun DashboardScreen(
                             }
                         }
                         Text(
-                            text = "Local Encrypted Ledger",
+                            text = if (activeLedger.type == LedgerType.BUSINESS) "Small Business Bookkeeping Vault" else "Local Encrypted Ledger",
                             fontSize = 12.sp,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -176,6 +191,101 @@ fun DashboardScreen(
                                 contentDescription = "Toggle Privacy",
                                 tint = if (isPrivacyMode) GoldAccent else MaterialTheme.colorScheme.onSurface
                             )
+                        }
+                    }
+                }
+            }
+
+            // Interactive Active Record Book Banner (Switch / Add Books)
+            item {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
+                    border = androidx.compose.foundation.BorderStroke(
+                        1.dp,
+                        if (activeLedger.type == LedgerType.BUSINESS) GoldAccent.copy(alpha = 0.45f) else CyanAccent.copy(alpha = 0.45f)
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 18.dp, vertical = 4.dp)
+                        .clickable { onOpenLedgerSwitcher() }
+                        .testTag("banner_active_ledger_switcher")
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(36.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(
+                                        if (activeLedger.type == LedgerType.BUSINESS) GoldAccent.copy(alpha = 0.2f) else CyanAccent.copy(alpha = 0.2f)
+                                    ),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = when (activeLedger.iconName) {
+                                        "store" -> Icons.Default.Store
+                                        "favorite" -> Icons.Default.Favorite
+                                        "child" -> Icons.Default.ChildCare
+                                        else -> Icons.Default.Person
+                                    },
+                                    contentDescription = null,
+                                    tint = if (activeLedger.type == LedgerType.BUSINESS) GoldAccent else CyanAccent,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = activeLedger.name,
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.width(6.dp))
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = if (activeLedger.type == LedgerType.BUSINESS) GoldAccent.copy(alpha = 0.2f) else CyanAccent.copy(alpha = 0.2f)
+                                    ) {
+                                        Text(
+                                            text = if (activeLedger.type == LedgerType.BUSINESS) "BUSINESS" else "INDIVIDUAL",
+                                            fontSize = 8.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (activeLedger.type == LedgerType.BUSINESS) GoldAccent else CyanAccent,
+                                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                                Text(
+                                    text = if (activeLedger.businessSubtype.isNotBlank()) activeLedger.businessSubtype
+                                    else if (activeLedger.type == LedgerType.BUSINESS) "Stock Purchases, Sales & Debts Bookkeeping"
+                                    else "Personal Expenses, Income & Savings",
+                                    fontSize = 10.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = MaterialTheme.colorScheme.surface
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Switch Book", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = CyanAccent)
+                                Spacer(modifier = Modifier.width(2.dp))
+                                Icon(Icons.Default.ArrowDropDown, contentDescription = null, tint = CyanAccent, modifier = Modifier.size(16.dp))
+                            }
                         }
                     }
                 }
@@ -220,14 +330,24 @@ fun DashboardScreen(
                 )
             }
 
-            // Hero Summary Card
+            // Hero Summary Card (Business Bookkeeping vs Individual Record)
             item {
-                HeroFinancialCard(
-                    summary = summary,
-                    timeframe = timeframe,
-                    isPrivacyMode = isPrivacyMode,
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)
-                )
+                if (activeLedger.type == LedgerType.BUSINESS) {
+                    BusinessBookkeepingHeroCard(
+                        summary = businessSummary,
+                        timeframe = timeframe,
+                        isPrivacyMode = isPrivacyMode,
+                        currencySymbol = currencySymbol,
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)
+                    )
+                } else {
+                    HeroFinancialCard(
+                        summary = summary,
+                        timeframe = timeframe,
+                        isPrivacyMode = isPrivacyMode,
+                        modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)
+                    )
+                }
             }
 
             // Quick Vault Action Bar (Export, Budgets, Recurring)
@@ -622,6 +742,238 @@ fun HeroFinancialCard(
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
                         )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun BusinessBookkeepingHeroCard(
+    summary: BusinessBookkeepingSummary,
+    timeframe: TimeframeFilter,
+    isPrivacyMode: Boolean,
+    currencySymbol: String = "$",
+    modifier: Modifier = Modifier
+) {
+    val timeframeLabel = when (timeframe) {
+        TimeframeFilter.DAILY -> "Today"
+        TimeframeFilter.WEEKLY -> "This Week"
+        TimeframeFilter.MONTHLY -> "This Month"
+        TimeframeFilter.ANNUAL -> "This Year"
+    }
+
+    Surface(
+        shape = RoundedCornerShape(22.dp),
+        color = VaultSurfaceElevated,
+        border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.45f)),
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("business_bookkeeping_hero_card")
+    ) {
+        Column(
+            modifier = Modifier
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            VaultSurfaceElevated,
+                            VaultDarkBg.copy(alpha = 0.9f)
+                        )
+                    )
+                )
+                .padding(18.dp)
+        ) {
+            // Top Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .background(GoldAccent.copy(alpha = 0.2f)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(Icons.Default.Store, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(14.dp))
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Business Bookkeeping • $timeframeLabel",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = if (summary.netBusinessProfit >= 0) EmeraldIncome.copy(alpha = 0.15f) else RoseExpense.copy(alpha = 0.15f)
+                ) {
+                    Text(
+                        text = if (summary.netBusinessProfit >= 0) "SURPLUS / PROFIT" else "OPERATING DEFICIT",
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = if (summary.netBusinessProfit >= 0) EmeraldIncome else RoseExpense,
+                        modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Main Net Profit
+            val profitColor = if (summary.netBusinessProfit >= 0) EmeraldIncome else RoseExpense
+            Text(
+                text = CryptoManager.formatMaskedAmount(summary.netBusinessProfit, isPrivacyMode),
+                fontSize = 32.sp,
+                fontWeight = FontWeight.ExtraBold,
+                color = profitColor,
+                letterSpacing = (-0.5).sp
+            )
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Revenue vs Expenses row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text("Total Revenue (Sales)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = CryptoManager.formatMaskedAmount(summary.totalIncome, isPrivacyMode),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = EmeraldIncome
+                    )
+                }
+                Column(horizontalAlignment = Alignment.End) {
+                    Text("Total Expenses (Stock & Ops)", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        text = CryptoManager.formatMaskedAmount(summary.totalExpense, isPrivacyMode),
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = RoseExpense
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Micro/Small Business 4 Key Breakdown Cards
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Stock Purchased
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, RoseExpense.copy(alpha = 0.3f)),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Inventory2, contentDescription = null, tint = RoseExpense, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Stock Bought", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = CryptoManager.formatMaskedAmount(summary.totalStockPurchases, isPrivacyMode),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = RoseExpense
+                        )
+                        Text("Operational Expense", fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                    }
+                }
+
+                // Stock Sales & Margin
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, EmeraldIncome.copy(alpha = 0.3f)),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.MonetizationOn, contentDescription = null, tint = EmeraldIncome, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Stock Sold", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = CryptoManager.formatMaskedAmount(summary.totalSalesRevenue, isPrivacyMode),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = EmeraldIncome
+                        )
+                        Text(
+                            text = "Margin: ${CryptoManager.formatMaskedAmount(summary.stockGrossMargin, isPrivacyMode)}",
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (summary.stockGrossMargin >= 0) CyanAccent else RoseExpense
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Customer Debts Recovered
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, CyanAccent.copy(alpha = 0.3f)),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.TrendingUp, contentDescription = null, tint = CyanAccent, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Debts Recovered", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = CryptoManager.formatMaskedAmount(summary.totalDebtCollected, isPrivacyMode),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = CyanAccent
+                        )
+                        Text("Customer Credit Settled", fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
+                    }
+                }
+
+                // Personal Withdrawals (Drawings)
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.7f),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, GoldAccent.copy(alpha = 0.3f)),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Column(modifier = Modifier.padding(10.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Person, contentDescription = null, tint = GoldAccent, modifier = Modifier.size(13.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Personal Drawings", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = CryptoManager.formatMaskedAmount(summary.totalPersonalWithdrawals, isPrivacyMode),
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = GoldAccent
+                        )
+                        Text("Owner Take-home Cash", fontSize = 8.sp, color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f))
                     }
                 }
             }

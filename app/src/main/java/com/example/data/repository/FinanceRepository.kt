@@ -3,10 +3,12 @@ package com.example.data.repository
 import com.example.data.calendar.CalendarSyncManager
 import com.example.data.local.BudgetDao
 import com.example.data.local.CategoryRuleDao
+import com.example.data.local.LedgerBookDao
 import com.example.data.local.RecurringTransactionDao
 import com.example.data.local.TransactionDao
 import com.example.data.model.BudgetEntity
 import com.example.data.model.CategoryRule
+import com.example.data.model.LedgerBookEntity
 import com.example.data.model.RecurrenceFrequency
 import com.example.data.model.RecurringTransactionEntity
 import com.example.data.model.TransactionEntity
@@ -20,12 +22,34 @@ class FinanceRepository(
     private val categoryRuleDao: CategoryRuleDao,
     private val recurringTransactionDao: RecurringTransactionDao,
     private val budgetDao: BudgetDao,
+    private val ledgerBookDao: LedgerBookDao,
     private val calendarSyncManager: CalendarSyncManager
 ) {
     val allTransactions: Flow<List<TransactionEntity>> = transactionDao.getAllTransactions()
     val allRules: Flow<List<CategoryRule>> = categoryRuleDao.getAllRules()
     val allRecurring: Flow<List<RecurringTransactionEntity>> = recurringTransactionDao.getAllRecurring()
     val allBudgets: Flow<List<BudgetEntity>> = budgetDao.getAllBudgets()
+    val allLedgers: Flow<List<LedgerBookEntity>> = ledgerBookDao.getAllLedgers()
+
+    fun getTransactionsByLedger(ledgerId: String): Flow<List<TransactionEntity>> {
+        return transactionDao.getTransactionsByLedger(ledgerId)
+    }
+
+    suspend fun insertLedger(ledger: LedgerBookEntity) {
+        ledgerBookDao.insertLedger(ledger)
+    }
+
+    suspend fun updateLedger(ledger: LedgerBookEntity) {
+        ledgerBookDao.updateLedger(ledger)
+    }
+
+    suspend fun deleteLedger(ledger: LedgerBookEntity) {
+        ledgerBookDao.deleteLedger(ledger)
+    }
+
+    suspend fun getLedgerById(id: String): LedgerBookEntity? {
+        return ledgerBookDao.getLedgerById(id)
+    }
 
     fun getTransactionsBetween(startTime: Long, endTime: Long): Flow<List<TransactionEntity>> {
         return transactionDao.getTransactionsBetween(startTime, endTime)
